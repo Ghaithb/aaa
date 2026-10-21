@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: ferha_postgres
+    environment:
+      POSTGRES_USER: ferha_user
+      POSTGRES_PASSWORD: ferha_password
+      POSTGRES_DB: ferha_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - ferha_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ferha_user -d ferha_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres_test:
+    image: postgres:17-alpine
+    container_name: ferha_postgres_test
+    environment:
+      POSTGRES_USER: ferha_user
+      POSTGRES_PASSWORD: ferha_password
+      POSTGRES_DB: ferha_test
+    ports:
+      - '5433:5432'
+    volumes:
+      - ferha_postgres_test_data:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: ferha_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_access_key
+      MINIO_ROOT_PASSWORD: minio_secret_key
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - ferha_minio_data:/data
+
+volumes:
+  ferha_postgres_data:
+  ferha_postgres_test_data:
+  ferha_minio_data:

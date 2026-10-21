@@ -1,0 +1,19 @@
+{
+  "name": "ferha",
+  "private": true,
+  "version": "0.1.0",
+  "description": "FERHA — سهل عليك فرحك — Plateforme de gestion d'événements en Tunisie",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build",
+    "test": "pnpm --filter backend test",
+    "test:e2e": "pnpm --filter backend test:e2e",
+    "db:migrate": "pnpm --filter backend db:migrate",
+    "db:seed": "pnpm --filter backend db:seed",
+    "db:studio": "pnpm --filter backend db:studio",
+    "lint": "pnpm --filter backend lint && pnpm --filter frontend lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
