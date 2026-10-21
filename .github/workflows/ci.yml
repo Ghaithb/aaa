@@ -1,0 +1,96 @@
+name: CI — FERHA
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend:
+    name: Backend — Lint, Migrate & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: ferha_user
+          POSTGRES_PASSWORD: ferha_password
+          POSTGRES_DB: ferha_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ferha_user -d ferha_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://ferha_user:ferha_password@localhost:5432/ferha_db
+      JWT_SECRET: ci-jwt-secret
+      JWT_EXPIRES_IN: 7d
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Lint
+        working-directory: backend
+        run: pnpm run lint
+
+      - name: Generate Prisma client
+        working-directory: backend
+        run: pnpm exec prisma generate
+
+      - name: Run unit tests
+        working-directory: backend
+        run: pnpm test
+
+  frontend:
+    name: Frontend — Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: pnpm run lint
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm run build

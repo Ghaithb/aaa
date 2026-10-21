@@ -1,33 +1,36 @@
-// src/main.ts
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
-import { ValidationPipe } from './common/pipes/validation.pipe';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import helmet from 'helmet';
-import * as rateLimit from 'express-rate-limit';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Global middlewares / pipes / filters / interceptors
-  app.useGlobalPipes(new ValidationPipe());
-  app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new TransformInterceptor());
-  app.use(LoggerMiddleware);
-
-  // Security middlewares
+  // Security
   app.use(helmet());
-  app.use(
-    rateLimit({
-      windowMs: parseInt(process.env.THROTTLE_TTL) * 1000 || 60000,
-      max: parseInt(process.env.THROTTLE_LIMIT) || 100,
+
+  // CORS – allow the Next.js dev server and production domain
+  app.enableCors({
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    ],
+    credentials: true,
+  });
+
+  // Global validation pipe – strips unknown fields and transforms types
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
-  const port = process.env.PORT || 3001;
+  // Global API prefix
+  app.setGlobalPrefix('api/v1');
+
+  const port = parseInt(process.env.PORT ?? '3001', 10);
   await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
+  console.log(`🚀 FERHA backend running on http://localhost:${port}/api/v1`);
 }
 bootstrap();
