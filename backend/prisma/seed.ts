@@ -4,7 +4,7 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Categories
+  // ── CATEGORIES ─────────────────────────────────────
   await prisma.category.createMany({
     data: [
       { name: 'Photographe', slug: 'photographe' },
@@ -15,14 +15,14 @@ async function main() {
     skipDuplicates: true,
   });
 
-  // Example provider user
-  const providerPassword = await bcrypt.hash('provider123', 10);
+  // ── PROVIDER USER ─────────────────────────────────
+  const providerPwd = await bcrypt.hash('provider123', 10);
   const providerUser = await prisma.user.upsert({
     where: { email: 'provider@example.com' },
     update: {},
     create: {
       email: 'provider@example.com',
-      passwordHash: providerPassword,
+      passwordHash: providerPwd,
       firstName: 'Ali',
       lastName: 'Ben',
       role: UserRole.PRESTATAIRE,
@@ -40,44 +40,41 @@ async function main() {
     },
   });
 
-  // Example client user
-  const clientPassword = await bcrypt.hash('client123', 10);
+  // ── CLIENT USER ───────────────────────────────────
+  const clientPwd = await bcrypt.hash('client123', 10);
   const clientUser = await prisma.user.upsert({
     where: { email: 'client@example.com' },
     update: {},
     create: {
       email: 'client@example.com',
-      passwordHash: clientPassword,
+      passwordHash: clientPwd,
       firstName: 'Sarra',
       lastName: 'Mansour',
       role: UserRole.CLIENT,
     },
   });
 
-  // Example event for the client
-  await prisma.event.upsert({
-    where: { title: 'Mariage de Sarra' },
-    update: {},
-    create: {
-      clientId: clientUser.id,
-      title: 'Mariage de Sarra',
-      type: 'MARIAGE',
-      date: new Date('2024-06-15'),
-      governorate: 'Tunis',
-      city: 'Tunis',
-      guestCount: 120,
-      budgetMillimes: 5000000,
-    },
-  });
+  // ── EXAMPLE EVENT ─────────────────────────────────
+  // Use findFirst + create instead of upsert because title is not a unique field
+  const existing = await prisma.event.findFirst({ where: { clientId: clientUser.id, title: 'Mariage de Sarra' } });
+  if (!existing) {
+    await prisma.event.create({
+      data: {
+        clientId: clientUser.id,
+        title: 'Mariage de Sarra',
+        type: 'MARIAGE',
+        date: new Date('2024-06-15'),
+        governorate: 'Tunis',
+        city: 'Tunis',
+        guestCount: 120,
+        budgetMillimes: 5_000_000,
+      },
+    });
+  }
 
-  console.log('✅ Seed data inserted');
+  console.log('✅ FERHA seed data inserted!');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());

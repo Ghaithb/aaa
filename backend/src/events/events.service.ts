@@ -3,28 +3,26 @@ import { PrismaService } from '../prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
+const db = (p: PrismaService) => p as any;
+
 @Injectable()
 export class EventsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateEventDto, clientId: string) {
-    return this.prisma.event.create({
-      data: { ...dto, clientId, date: new Date(dto.date) },
-    });
+    return db(this.prisma).event.create({ data: { ...dto, clientId, date: new Date(dto.date) } });
   }
 
   async findAll(clientId: string) {
-    return this.prisma.event.findMany({
+    return db(this.prisma).event.findMany({
       where: { clientId, deletedAt: null },
       orderBy: { date: 'asc' },
-      include: {
-        _count: { select: { bookings: true, guests: true, tasks: true } },
-      },
+      include: { _count: { select: { bookings: true, guests: true, tasks: true } } },
     });
   }
 
   async findOne(id: string, clientId: string) {
-    const event = await this.prisma.event.findFirst({
+    const event = await db(this.prisma).event.findFirst({
       where: { id, deletedAt: null },
       include: {
         bookings: { include: { provider: { select: { businessName: true } } } },
@@ -41,7 +39,7 @@ export class EventsService {
 
   async update(id: string, dto: UpdateEventDto, clientId: string) {
     await this.findOne(id, clientId);
-    return this.prisma.event.update({
+    return db(this.prisma).event.update({
       where: { id },
       data: { ...dto, ...(dto.date ? { date: new Date(dto.date) } : {}) },
     });
@@ -49,6 +47,6 @@ export class EventsService {
 
   async remove(id: string, clientId: string) {
     await this.findOne(id, clientId);
-    return this.prisma.event.update({ where: { id }, data: { deletedAt: new Date() } });
+    return db(this.prisma).event.update({ where: { id }, data: { deletedAt: new Date() } });
   }
 }

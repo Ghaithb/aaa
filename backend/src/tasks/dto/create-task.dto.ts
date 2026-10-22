@@ -1,5 +1,12 @@
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
-import { Priority } from '@prisma/client';
+
+// Priority enum doesn't exist in @prisma/client directly in some versions — define locally
+export enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
 
 export class CreateTaskDto {
   @IsString()

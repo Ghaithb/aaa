@@ -1,17 +1,8 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Request,
-  HttpException,
-  HttpStatus,
-  Get,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../common/enums';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 
@@ -22,22 +13,35 @@ export class BookingsController {
 
   @Post()
   @Roles(UserRole.PRESTATAIRE)
-  async create(@Body() dto: CreateBookingDto, @Request() req) {
-    const providerId = req.user.userId;
+  async create(@Body() dto: CreateBookingDto, @Request() req: any) {
     try {
-      return await this.bookingsService.createBooking(dto, providerId);
-    } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
+      return await this.bookingsService.createBooking(dto, req.user.userId);
+    } catch (e: any) {
+      throw e;
     }
   }
 
   @Get()
   @Roles(UserRole.PRESTATAIRE, UserRole.ADMIN)
-  async findAll(@Request() req) {
-    try {
-      return await this.bookingsService.findAllForProvider(req.user.userId);
-    } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
-    }
+  findAll(@Request() req: any) {
+    return this.bookingsService.findAllForProvider(req.user.userId);
+  }
+
+  @Patch(':id/contract')
+  @Roles(UserRole.PRESTATAIRE)
+  confirmContract(@Param('id') id: string, @Request() req: any) {
+    return this.bookingsService.confirmContract(id, req.user.userId);
+  }
+
+  @Patch(':id/deposit')
+  @Roles(UserRole.PRESTATAIRE)
+  confirmDeposit(@Param('id') id: string, @Request() req: any) {
+    return this.bookingsService.confirmDeposit(id, req.user.userId);
+  }
+
+  @Patch(':id/paid')
+  @Roles(UserRole.PRESTATAIRE)
+  markFullyPaid(@Param('id') id: string, @Request() req: any) {
+    return this.bookingsService.markFullyPaid(id, req.user.userId);
   }
 }

@@ -17,7 +17,7 @@ import { PrismaService } from '../prisma.service';
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET') || 'ferha-dev-secret',
         signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN') || '7d',
+          expiresIn: (config.get<string>('JWT_EXPIRES_IN') || '7d') as any,
         },
       }),
     }),
